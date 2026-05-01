@@ -35,6 +35,7 @@ import {
 import {
   clearBundledRuntimeDependencyNodePaths,
   installBundledRuntimeDeps,
+  shouldSkipBundledRuntimeDepsInstall,
   type BundledRuntimeDepsInstallParams,
 } from "./bundled-runtime-deps.js";
 import { clearBundledRuntimeDistMirrorPreparationCache } from "./bundled-runtime-dist-mirror-cache.js";
@@ -791,7 +792,8 @@ function resolvePluginLoadCacheContext(options: PluginLoadOptions = {}) {
   const requireSetupEntryForSetupOnlyChannelPlugins =
     options.requireSetupEntryForSetupOnlyChannelPlugins === true;
   const preferSetupRuntimeForChannelPlugins = options.preferSetupRuntimeForChannelPlugins === true;
-  const shouldInstallBundledRuntimeDeps = options.installBundledRuntimeDeps !== false;
+  const shouldInstallBundledRuntimeDeps =
+    options.installBundledRuntimeDeps !== false && !shouldSkipBundledRuntimeDepsInstall(env);
   const runtimeSubagentMode = resolveRuntimeSubagentMode(options.runtimeOptions);
   const coreGatewayMethodNames = Array.from(
     new Set([

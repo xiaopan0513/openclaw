@@ -1045,6 +1045,16 @@ export async function resolveModelAsync(
       modelRegistry,
     };
   }
+  const configuredFallbackModel = resolveConfiguredFallbackModel({
+    provider: normalizedRef.provider,
+    modelId: normalizedRef.model,
+    cfg,
+    agentDir: resolvedAgentDir,
+    runtimeHooks,
+  });
+  if (!explicitModel && configuredFallbackModel) {
+    return { model: configuredFallbackModel, authStorage, modelRegistry };
+  }
   const providerConfig = resolveConfiguredProviderConfig(cfg, normalizedRef.provider);
   const resolveDynamicAttempt = async () => {
     await runtimeHooks.prepareProviderDynamicModel({

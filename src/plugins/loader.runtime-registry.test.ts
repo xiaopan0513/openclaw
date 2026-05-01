@@ -101,6 +101,14 @@ describe("getCompatibleActivePluginRegistry", () => {
     ).toBeUndefined();
   });
 
+  it("disables bundled runtime deps install when requested by environment", () => {
+    const context = __testing.resolvePluginLoadCacheContext({
+      env: { OPENCLAW_SKIP_BUNDLED_RUNTIME_DEPS_INSTALL: "1" } as NodeJS.ProcessEnv,
+    });
+
+    expect(context.shouldInstallBundledRuntimeDeps).toBe(false);
+  });
+
   it("does not embed activation secrets in the loader cache key", () => {
     const { cacheKey } = __testing.resolvePluginLoadCacheContext({
       config: {

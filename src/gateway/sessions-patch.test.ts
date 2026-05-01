@@ -343,6 +343,23 @@ describe("gateway sessions patch", () => {
     expect(entry.modelOverride).toBe("claude-sonnet-4-6");
   });
 
+  test("does not load model catalog for explicit allowlisted provider/model refs", async () => {
+    let catalogLoads = 0;
+    const entry = expectPatchOk(
+      await runPatch({
+        cfg: createAllowlistedAnthropicModelCfg(),
+        patch: { key: MAIN_SESSION_KEY, model: "anthropic/claude-sonnet-4-6" },
+        loadGatewayModelCatalog: async () => {
+          catalogLoads += 1;
+          return [{ provider: "anthropic", id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" }];
+        },
+      }),
+    );
+    expect(entry.providerOverride).toBe("anthropic");
+    expect(entry.modelOverride).toBe("claude-sonnet-4-6");
+    expect(catalogLoads).toBe(0);
+  });
+
   test("sets spawnDepth for subagent sessions", async () => {
     const entry = expectPatchOk(
       await runPatch({

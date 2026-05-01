@@ -118,6 +118,13 @@ const PLUGIN_ROOT_INSTALL_STAGE_DIR = ".openclaw-install-stage";
 
 const registeredBundledRuntimeDepNodePaths = new Set<string>();
 
+export function shouldSkipBundledRuntimeDepsInstall(env: NodeJS.ProcessEnv = process.env): boolean {
+  const raw = String(env.OPENCLAW_SKIP_BUNDLED_RUNTIME_DEPS_INSTALL ?? "")
+    .trim()
+    .toLowerCase();
+  return raw === "1" || raw === "true" || raw === "yes" || raw === "on";
+}
+
 function createBundledRuntimeDepsEnsureResult(
   installedSpecs: string[],
 ): BundledRuntimeDepsEnsureResult {

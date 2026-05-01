@@ -88,6 +88,36 @@ describe("resolveModelAsync startup retry", () => {
     expect(runProviderDynamicModelMock).toHaveBeenCalledTimes(2);
   });
 
+  it("uses configured provider fallback without provider-runtime discovery", async () => {
+    const { resolveModelAsync } = await import("./model.js");
+
+    const result = await resolveModelAsync(
+      "zuxo-relay",
+      "claude-haiku-4-5-20251001",
+      "/tmp/agent",
+      {
+        models: {
+          providers: {
+            "zuxo-relay": {
+              baseUrl: "https://models.zuxoai.cn/v1",
+              apiKey: "test-key",
+              models: [],
+            },
+          },
+        },
+      },
+      { runtimeHooks },
+    );
+
+    expect(result.error).toBeUndefined();
+    expect(result.model).toMatchObject({
+      provider: "zuxo-relay",
+      id: "claude-haiku-4-5-20251001",
+    });
+    expect(prepareProviderDynamicModelMock).not.toHaveBeenCalled();
+    expect(runProviderDynamicModelMock).not.toHaveBeenCalled();
+  });
+
   it("does not retry during steady-state misses", async () => {
     const { resolveModelAsync } = await import("./model.js");
 

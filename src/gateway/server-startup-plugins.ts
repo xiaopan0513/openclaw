@@ -10,6 +10,7 @@ import {
   repairBundledRuntimeDepsInstallRootAsync,
   resolveBundledRuntimeDependencyPackageInstallRoot,
   scanBundledPluginRuntimeDeps,
+  shouldSkipBundledRuntimeDepsInstall,
 } from "../plugins/bundled-runtime-deps.js";
 import { loadPluginLookUpTable } from "../plugins/plugin-lookup-table.js";
 import type { PluginMetadataSnapshot } from "../plugins/plugin-metadata-snapshot.js";
@@ -63,7 +64,7 @@ async function prestageGatewayBundledRuntimeDepsImpl(params: {
   pluginIds: readonly string[];
   log: GatewayPluginBootstrapLog;
 }): Promise<void> {
-  if (params.pluginIds.length === 0) {
+  if (params.pluginIds.length === 0 || shouldSkipBundledRuntimeDepsInstall(process.env)) {
     return;
   }
   const packageRoot = resolveOpenClawPackageRootSync({
