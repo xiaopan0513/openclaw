@@ -842,6 +842,28 @@ describe("image tool implicit imageModel config", () => {
     });
   });
 
+  it("uses configured ZUXO relay vision model without auth-store discovery", async () => {
+    await withTempAgentDir(async (agentDir) => {
+      const cfg: OpenClawConfig = {
+        agents: { defaults: { model: { primary: "zuxo-relay/claude-haiku-4-5-20251001" } } },
+        models: {
+          providers: {
+            "zuxo-relay": {
+              baseUrl: "https://models.zuxoai.cn/v1",
+              api: "openai-completions",
+              auth: "api-key",
+              models: [makeModelDefinition("claude-haiku-4-5-20251001", ["text", "image"])],
+            },
+          },
+        },
+      };
+      expect(resolveImageModelConfigForTool({ cfg, agentDir })).toEqual({
+        primary: "zuxo-relay/claude-haiku-4-5-20251001",
+      });
+      expect(createImageTool({ config: cfg, agentDir })).not.toBeNull();
+    });
+  });
+
   it("does not double-prefix custom provider model IDs that already include the provider", async () => {
     await withTempAgentDir(async (agentDir) => {
       await writeAuthProfiles(agentDir, {

@@ -337,6 +337,37 @@ describe("provider-runtime", () => {
     providerRuntimeWarnMock.mockReset();
   });
 
+  it("skips provider plugin hooks for the static ZUXO relay transport", () => {
+    const cfg = {
+      models: {
+        providers: {
+          "zuxo-relay": {
+            baseUrl: "https://models.zuxoai.cn/v1",
+            api: "openai-completions",
+            auth: "api-key",
+          },
+        },
+      },
+    } as OpenClawConfig;
+
+    expect(resolveProviderRuntimePlugin({ provider: "zuxo-relay", config: cfg })).toBeUndefined();
+    expect(
+      resolveProviderStreamFn({
+        provider: "zuxo-relay",
+        config: cfg,
+        context: createDemoRuntimeContext({ config: cfg }),
+      }),
+    ).toBeUndefined();
+    expect(
+      resolveProviderExtraParamsForTransport({
+        provider: "zuxo-relay",
+        config: cfg,
+        context: createDemoResolvedModelContext({ provider: "zuxo-relay" }),
+      }),
+    ).toBeUndefined();
+    expect(resolvePluginProvidersMock).not.toHaveBeenCalled();
+  });
+
   it("matches providers by alias for runtime hook lookup", () => {
     resolvePluginProvidersMock.mockReturnValue([
       {
@@ -1969,7 +2000,7 @@ describe("provider-runtime", () => {
       expect.objectContaining({
         onlyPluginIds: ["openai"],
         activate: false,
-        cache: false,
+        cache: true,
       }),
     );
     expect(resolveCatalogHookProviderPluginIdsMock).toHaveBeenCalledTimes(1);

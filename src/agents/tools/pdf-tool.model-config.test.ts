@@ -89,6 +89,34 @@ describe("resolvePdfModelConfigForTool", () => {
     });
   });
 
+  it("uses configured ZUXO relay vision model without auth-store discovery", async () => {
+    const cfg = {
+      agents: {
+        defaults: {
+          model: { primary: "zuxo-relay/claude-haiku-4-5-20251001" },
+        },
+      },
+      models: {
+        providers: {
+          "zuxo-relay": {
+            baseUrl: "https://models.zuxoai.cn/v1",
+            api: "openai-completions",
+            auth: "api-key",
+            models: [
+              {
+                id: "claude-haiku-4-5-20251001",
+                input: ["text", "image"],
+              },
+            ],
+          },
+        },
+      },
+    } as OpenClawConfig;
+    expect(resolvePdfModelConfigForTool({ cfg, agentDir: TEST_AGENT_DIR })).toEqual({
+      primary: "zuxo-relay/claude-haiku-4-5-20251001",
+    });
+  });
+
   it("prefers anthropic when available for native PDF support", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "anthropic-test");
     vi.stubEnv("OPENAI_API_KEY", "openai-test");

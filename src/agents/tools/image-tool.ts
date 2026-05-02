@@ -24,6 +24,7 @@ import {
 } from "../../plugin-sdk/media-understanding.js";
 import { resolveUserPath } from "../../utils.js";
 import { isMinimaxVlmProvider } from "../minimax-vlm.js";
+import { normalizeProviderId } from "../provider-id.js";
 import {
   coerceImageAssistantText,
   coerceImageModelConfig,
@@ -66,6 +67,18 @@ const imageToolProviderDeps = {
   resolveAutoMediaKeyProviders,
   resolveDefaultMediaModel,
 };
+
+function isStaticZuxoRelayProvider(provider: string, cfg?: OpenClawConfig): boolean {
+  if (normalizeProviderId(provider) !== "zuxo-relay") {
+    return false;
+  }
+  const providerConfig = cfg?.models?.providers?.[provider];
+  return (
+    typeof providerConfig?.baseUrl === "string" &&
+    typeof providerConfig.api === "string" &&
+    normalizeProviderId(providerConfig.api) === "openai-completions"
+  );
+}
 
 export const __testing = {
   decodeDataUrl,
@@ -136,6 +149,9 @@ export function resolveImageModelConfigForTool(params: {
     cfg: params.cfg,
     provider: primary.provider,
   });
+  if (providerVisionFromConfig && isStaticZuxoRelayProvider(primary.provider, params.cfg)) {
+    return { primary: providerVisionFromConfig };
+  }
   const primaryCandidates = (() => {
     if (providerVisionFromConfig) {
       return [providerVisionFromConfig];

@@ -99,6 +99,30 @@ describe("createVideoGenerateTool", () => {
     expect(createVideoGenerateTool({ config: asConfig({}) })).toBeNull();
   });
 
+  it("does not auto-register when media generation fallback is disabled", () => {
+    const listProviders = vi
+      .spyOn(videoGenerationRuntime, "listRuntimeVideoGenerationProviders")
+      .mockReturnValue([
+        {
+          id: "qwen",
+          defaultModel: "wan2.6-t2v",
+          models: ["wan2.6-t2v"],
+          capabilities: {},
+          isConfigured: () => true,
+          generateVideo: vi.fn(async () => ({ videos: [] })),
+        },
+      ]);
+
+    expect(
+      createVideoGenerateTool({
+        config: asConfig({
+          agents: { defaults: { mediaGenerationAutoProviderFallback: false } },
+        }),
+      }),
+    ).toBeNull();
+    expect(listProviders).not.toHaveBeenCalled();
+  });
+
   it("registers when video-generation config is present", () => {
     expect(
       createVideoGenerateTool({

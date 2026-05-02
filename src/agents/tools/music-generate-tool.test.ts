@@ -134,6 +134,30 @@ describe("createMusicGenerateTool", () => {
     expect(createMusicGenerateTool({ config: asConfig({}) })).toBeNull();
   });
 
+  it("does not auto-register when media generation fallback is disabled", () => {
+    const listProviders = vi
+      .spyOn(musicGenerationRuntime, "listRuntimeMusicGenerationProviders")
+      .mockReturnValue([
+        {
+          id: "google",
+          defaultModel: "lyria-3-clip-preview",
+          models: ["lyria-3-clip-preview"],
+          isConfigured: () => true,
+          generateMusic: vi.fn(async () => ({ tracks: [] })),
+        },
+      ]);
+    listProviders.mockClear();
+
+    expect(
+      createMusicGenerateTool({
+        config: asConfig({
+          agents: { defaults: { mediaGenerationAutoProviderFallback: false } },
+        }),
+      }),
+    ).toBeNull();
+    expect(listProviders).not.toHaveBeenCalled();
+  });
+
   it("registers when music-generation config is present", () => {
     expect(
       createMusicGenerateTool({

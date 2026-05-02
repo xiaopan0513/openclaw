@@ -4,6 +4,7 @@ import {
   resolveAutoMediaKeyProviders,
   resolveDefaultMediaModel,
 } from "../../media-understanding/defaults.js";
+import { normalizeProviderId } from "../provider-id.js";
 import {
   coerceImageModelConfig,
   type ImageModelConfig,
@@ -12,6 +13,18 @@ import {
 } from "./image-tool.helpers.js";
 import { hasAuthForProvider, resolveDefaultModelRef } from "./model-config.helpers.js";
 import { coercePdfModelConfig } from "./pdf-tool.helpers.js";
+
+function isStaticZuxoRelayProvider(provider: string, cfg?: OpenClawConfig): boolean {
+  if (normalizeProviderId(provider) !== "zuxo-relay") {
+    return false;
+  }
+  const providerConfig = cfg?.models?.providers?.[provider];
+  return (
+    typeof providerConfig?.baseUrl === "string" &&
+    typeof providerConfig.api === "string" &&
+    normalizeProviderId(providerConfig.api) === "openai-completions"
+  );
+}
 
 function resolveImageCandidateRefs(params: {
   cfg?: OpenClawConfig;
@@ -75,6 +88,9 @@ export function resolvePdfModelConfigForTool(params: {
     cfg: params.cfg,
     provider: primary.provider,
   });
+  if (providerVision && isStaticZuxoRelayProvider(primary.provider, params.cfg)) {
+    return { primary: providerVision };
+  }
   const providerDefault =
     providerVision?.split("/")[1] ??
     resolveDefaultMediaModel({

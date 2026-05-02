@@ -253,6 +253,9 @@ export function resolveCapabilityModelConfigForTool(params: {
   if (hasToolModelConfig(explicit)) {
     return explicit;
   }
+  if (params.cfg?.agents?.defaults?.mediaGenerationAutoProviderFallback === false) {
+    return null;
+  }
   return buildToolModelConfigFromCandidates({
     explicit,
     agentDir: params.agentDir,

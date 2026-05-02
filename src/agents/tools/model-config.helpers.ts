@@ -9,12 +9,52 @@ import {
   ensureAuthProfileStore,
   hasAnyAuthProfileStoreSource,
   listProfilesForProvider,
+  type AuthProfileStore,
 } from "../auth-profiles.js";
 import { DEFAULT_MODEL, DEFAULT_PROVIDER } from "../defaults.js";
 import { resolveEnvApiKey } from "../model-auth.js";
 import { resolveConfiguredModelRef } from "../model-selection.js";
 
 export type ToolModelConfig = { primary?: string; fallbacks?: string[]; timeoutMs?: number };
+
+type AuthProviderResolutionCache = {
+  storesByAgentDir: Map<string, AuthProfileStore | null>;
+  resultsByProvider: Map<string, boolean>;
+};
+
+let activeAuthProviderResolutionCache: AuthProviderResolutionCache | undefined;
+
+export function withAuthProviderResolutionCache<T>(fn: () => T): T {
+  if (activeAuthProviderResolutionCache) {
+    return fn();
+  }
+  activeAuthProviderResolutionCache = {
+    storesByAgentDir: new Map(),
+    resultsByProvider: new Map(),
+  };
+  try {
+    return fn();
+  } finally {
+    activeAuthProviderResolutionCache = undefined;
+  }
+}
+
+function resolveCachedAuthProfileStore(agentDir: string): AuthProfileStore | null {
+  const cache = activeAuthProviderResolutionCache;
+  if (!cache) {
+    return ensureAuthProfileStore(agentDir, {
+      allowKeychainPrompt: false,
+    });
+  }
+  if (cache.storesByAgentDir.has(agentDir)) {
+    return cache.storesByAgentDir.get(agentDir) ?? null;
+  }
+  const store = ensureAuthProfileStore(agentDir, {
+    allowKeychainPrompt: false,
+  });
+  cache.storesByAgentDir.set(agentDir, store);
+  return store;
+}
 
 export function hasToolModelConfig(model: ToolModelConfig | undefined): boolean {
   return Boolean(
@@ -42,13 +82,19 @@ export function hasAuthForProvider(params: { provider: string; agentDir?: string
   if (!agentDir) {
     return false;
   }
+  const cache = activeAuthProviderResolutionCache;
+  const cacheKey = `${agentDir}\0${params.provider}`;
+  if (cache?.resultsByProvider.has(cacheKey)) {
+    return cache.resultsByProvider.get(cacheKey) ?? false;
+  }
   if (!hasAnyAuthProfileStoreSource(agentDir)) {
+    cache?.resultsByProvider.set(cacheKey, false);
     return false;
   }
-  const store = ensureAuthProfileStore(agentDir, {
-    allowKeychainPrompt: false,
-  });
-  return listProfilesForProvider(store, params.provider).length > 0;
+  const store = resolveCachedAuthProfileStore(agentDir);
+  const result = store ? listProfilesForProvider(store, params.provider).length > 0 : false;
+  cache?.resultsByProvider.set(cacheKey, result);
+  return result;
 }
 
 export function coerceToolModelConfig(model?: AgentModelConfig): ToolModelConfig {

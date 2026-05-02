@@ -23,6 +23,7 @@ import { createGatewayTool } from "./tools/gateway-tool.js";
 import { createImageGenerateTool } from "./tools/image-generate-tool.js";
 import { createImageTool } from "./tools/image-tool.js";
 import { createMessageTool } from "./tools/message-tool.js";
+import { withAuthProviderResolutionCache } from "./tools/model-config.helpers.js";
 import { createMusicGenerateTool } from "./tools/music-generate-tool.js";
 import { createNodesTool } from "./tools/nodes-tool.js";
 import { createPdfTool } from "./tools/pdf-tool.js";
@@ -143,59 +144,78 @@ export function createOpenClawTools(
     options?.sandboxRoot && options?.sandboxFsBridge
       ? { root: options.sandboxRoot, bridge: options.sandboxFsBridge }
       : undefined;
-  const imageTool = options?.agentDir?.trim()
-    ? createImageTool({
-        config: options?.config,
-        agentDir: options.agentDir,
-        workspaceDir,
-        sandbox,
-        fsPolicy: options?.fsPolicy,
-        modelHasVision: options?.modelHasVision,
-      })
-    : null;
-  const imageGenerateTool = createImageGenerateTool({
-    config: options?.config,
-    agentDir: options?.agentDir,
-    workspaceDir,
-    sandbox,
-    fsPolicy: options?.fsPolicy,
-  });
-  const videoGenerateTool = createVideoGenerateTool({
-    config: options?.config,
-    agentDir: options?.agentDir,
-    agentSessionKey: options?.agentSessionKey,
-    requesterOrigin: deliveryContext ?? undefined,
-    workspaceDir,
-    sandbox,
-    fsPolicy: options?.fsPolicy,
-  });
-  const musicGenerateTool = createMusicGenerateTool({
-    config: options?.config,
-    agentDir: options?.agentDir,
-    agentSessionKey: options?.agentSessionKey,
-    requesterOrigin: deliveryContext ?? undefined,
-    workspaceDir,
-    sandbox,
-    fsPolicy: options?.fsPolicy,
-  });
-  const pdfTool = options?.agentDir?.trim()
-    ? createPdfTool({
-        config: options?.config,
-        agentDir: options.agentDir,
-        workspaceDir,
-        sandbox,
-        fsPolicy: options?.fsPolicy,
-      })
-    : null;
-  const webSearchTool = createWebSearchTool({
-    config: options?.config,
-    sandboxed: options?.sandboxed,
-    runtimeWebSearch: runtimeWebTools?.search,
-  });
-  const webFetchTool = createWebFetchTool({
-    config: options?.config,
-    sandboxed: options?.sandboxed,
-    runtimeWebFetch: runtimeWebTools?.fetch,
+  const {
+    imageTool,
+    imageGenerateTool,
+    videoGenerateTool,
+    musicGenerateTool,
+    pdfTool,
+    webSearchTool,
+    webFetchTool,
+  } = withAuthProviderResolutionCache(() => {
+    const imageTool = options?.agentDir?.trim()
+      ? createImageTool({
+          config: options?.config,
+          agentDir: options.agentDir,
+          workspaceDir,
+          sandbox,
+          fsPolicy: options?.fsPolicy,
+          modelHasVision: options?.modelHasVision,
+        })
+      : null;
+    const imageGenerateTool = createImageGenerateTool({
+      config: options?.config,
+      agentDir: options?.agentDir,
+      workspaceDir,
+      sandbox,
+      fsPolicy: options?.fsPolicy,
+    });
+    const videoGenerateTool = createVideoGenerateTool({
+      config: options?.config,
+      agentDir: options?.agentDir,
+      agentSessionKey: options?.agentSessionKey,
+      requesterOrigin: deliveryContext ?? undefined,
+      workspaceDir,
+      sandbox,
+      fsPolicy: options?.fsPolicy,
+    });
+    const musicGenerateTool = createMusicGenerateTool({
+      config: options?.config,
+      agentDir: options?.agentDir,
+      agentSessionKey: options?.agentSessionKey,
+      requesterOrigin: deliveryContext ?? undefined,
+      workspaceDir,
+      sandbox,
+      fsPolicy: options?.fsPolicy,
+    });
+    const pdfTool = options?.agentDir?.trim()
+      ? createPdfTool({
+          config: options?.config,
+          agentDir: options.agentDir,
+          workspaceDir,
+          sandbox,
+          fsPolicy: options?.fsPolicy,
+        })
+      : null;
+    const webSearchTool = createWebSearchTool({
+      config: options?.config,
+      sandboxed: options?.sandboxed,
+      runtimeWebSearch: runtimeWebTools?.search,
+    });
+    const webFetchTool = createWebFetchTool({
+      config: options?.config,
+      sandboxed: options?.sandboxed,
+      runtimeWebFetch: runtimeWebTools?.fetch,
+    });
+    return {
+      imageTool,
+      imageGenerateTool,
+      videoGenerateTool,
+      musicGenerateTool,
+      pdfTool,
+      webSearchTool,
+      webFetchTool,
+    };
   });
   const messageTool = options?.disableMessageTool
     ? null
@@ -346,7 +366,8 @@ export function createOpenClawTools(
     existingToolNames: new Set(tools.map((tool) => tool.name)),
   });
 
-  return [...tools, ...wrappedPluginTools];
+  const result = [...tools, ...wrappedPluginTools];
+  return result;
 }
 
 export const __testing = {

@@ -32,6 +32,21 @@ function matchesProviderLiteralId(provider: ProviderPlugin, providerId: string):
   return !!normalized && normalizeLowercaseStringOrEmpty(provider.id) === normalized;
 }
 
+function shouldBypassProviderRuntimePlugin(params: {
+  provider: string;
+  config?: OpenClawConfig;
+}): boolean {
+  if (normalizeProviderId(params.provider) !== "zuxo-relay") {
+    return false;
+  }
+  const providerConfig = params.config?.models?.providers?.[params.provider];
+  return (
+    typeof providerConfig?.baseUrl === "string" &&
+    typeof providerConfig.api === "string" &&
+    normalizeProviderId(providerConfig.api) === "openai-completions"
+  );
+}
+
 export function resolveProviderPluginsForHooks(params: {
   config?: OpenClawConfig;
   workspaceDir?: string;
@@ -51,7 +66,7 @@ export function resolveProviderPluginsForHooks(params: {
       workspaceDir,
       env,
       activate: false,
-      cache: false,
+      cache: true,
       applyAutoEnable: params.applyAutoEnable,
       bundledProviderAllowlistCompat: params.bundledProviderAllowlistCompat ?? true,
       bundledProviderVitestCompat: params.bundledProviderVitestCompat ?? true,
@@ -65,7 +80,7 @@ export function resolveProviderPluginsForHooks(params: {
     workspaceDir,
     env,
     activate: false,
-    cache: false,
+    cache: true,
     applyAutoEnable: params.applyAutoEnable,
     bundledProviderAllowlistCompat: params.bundledProviderAllowlistCompat ?? true,
     bundledProviderVitestCompat: params.bundledProviderVitestCompat ?? true,
@@ -84,6 +99,9 @@ export function resolveProviderRuntimePlugin(params: {
   bundledProviderVitestCompat?: boolean;
   installBundledRuntimeDeps?: boolean;
 }): ProviderPlugin | undefined {
+  if (shouldBypassProviderRuntimePlugin(params)) {
+    return undefined;
+  }
   const apiOwnerHint = resolveProviderConfigApiOwnerHint({
     provider: params.provider,
     config: params.config,
@@ -113,6 +131,9 @@ export function resolveProviderHookPlugin(params: {
   workspaceDir?: string;
   env?: NodeJS.ProcessEnv;
 }): ProviderPlugin | undefined {
+  if (shouldBypassProviderRuntimePlugin(params)) {
+    return undefined;
+  }
   return (
     resolveProviderRuntimePlugin(params) ??
     resolveProviderPluginsForHooks({

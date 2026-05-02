@@ -131,6 +131,12 @@ export function resolveMusicGenerationModelConfigForTool(params: {
   cfg?: OpenClawConfig;
   agentDir?: string;
 }): ToolModelConfig | null {
+  if (
+    !params.cfg?.agents?.defaults?.musicGenerationModel &&
+    params.cfg?.agents?.defaults?.mediaGenerationAutoProviderFallback === false
+  ) {
+    return null;
+  }
   return resolveCapabilityModelConfigForTool({
     cfg: params.cfg,
     agentDir: params.agentDir,

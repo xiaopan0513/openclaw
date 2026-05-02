@@ -225,6 +225,12 @@ export function resolveVideoGenerationModelConfigForTool(params: {
   cfg?: OpenClawConfig;
   agentDir?: string;
 }): ToolModelConfig | null {
+  if (
+    !params.cfg?.agents?.defaults?.videoGenerationModel &&
+    params.cfg?.agents?.defaults?.mediaGenerationAutoProviderFallback === false
+  ) {
+    return null;
+  }
   return resolveCapabilityModelConfigForTool({
     cfg: params.cfg,
     agentDir: params.agentDir,
